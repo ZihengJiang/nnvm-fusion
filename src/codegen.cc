@@ -8,7 +8,6 @@
 #include <nnvm/pass.h>
 #include <iostream>
 #include <fstream>
-// TODO(ziheng) stream header file should be removed after debug
 
 namespace nnvm {
 namespace rtc {
@@ -78,12 +77,12 @@ Kernel KernelCodeGen(const std::string& kernel_name, const FusionGraph& fgraph) 
   const std::string type_str = "float";
   // for now, we assume fusion graph only have one output.
   FusionNodePtr fnode = fgraph.outputs[0].node;
-  PrintFNode(fnode);
+  // PrintFNode(fnode);
   uint32_t num = GetVariableNum(fnode);
 
   std::string arg_str = "(";
   for (uint32_t i = 0; i < num; ++i) {
-    arg_str += "const " + type_str + " *x" + std::to_string(i) + ", ";
+    arg_str += type_str + " *x" + std::to_string(i) + ", ";
   }
   arg_str += type_str + " *y, ";
   arg_str += "const unsigned int num_elements)";
@@ -104,16 +103,17 @@ Kernel KernelCodeGen(const std::string& kernel_name, const FusionGraph& fgraph) 
     "    y[global_idx] = " + exp_str + ";\n" +
     "  }\n"
     "}";
+#if NNVM_RTC_DEBUG
   std::ofstream file;
   file.open(kernel_name + ".cu");
   file << kernel_str;
   file.close();
+#endif
   return Kernel(kernel_name, kernel_str);
 }
 
 
 Graph CodeGen(Graph ret) {
-  LOG(INFO) << "CodeGen Begin";
   std::unordered_map<uint32_t, Kernel> kernel_map;
   const std::unordered_map<const Node*, FusionGraph>* node_fgraph =
     &(ret.GetAttr<std::unordered_map<const Node*, FusionGraph>>("fusion_graph"));

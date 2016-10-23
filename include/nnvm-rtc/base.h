@@ -13,21 +13,25 @@
 #include <vector>
 #include <string>
 
+#define NNVM_RTC_DEBUG 0
+
 namespace nnvm {
 namespace rtc {
+
+class AST;
+class RTC;
 
 using FusionNode    = Node;
 using FusionNodePtr = NodePtr;
 using FusionGraph   = Graph;
-using Kernel = std::pair<std::string, std::string>;
-
-class AST;
-using ASTPtr = std::shared_ptr<AST>; // TODO consider unique_ptr?
+using Kernel        = std::pair<std::string, std::string>;
+using KernelMap     = std::unordered_map<uint32_t, Kernel>;
+using RTCMap        = std::unordered_map<uint32_t, RTC>;
+using ASTPtr = std::shared_ptr<AST>;
 
 using FCodeGen = std::function<std::vector<ASTPtr>(
     const NodePtr& nodeptr,
     const std::vector<ASTPtr>& inputs)>;
-
 
 } // namespace rtc
 } // namespace nnvm

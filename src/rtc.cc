@@ -3,7 +3,9 @@
  * \file rtc.cc
  * \brief wrapper for NVRTC
  */
+#include <nnvm-rtc/base.h>
 #include <nnvm-rtc/rtc.h>
+#include <nnvm/pass.h>
 #include <iostream>
 
 namespace nnvm {
@@ -103,5 +105,27 @@ char* RTC::compile(const std::string& name, const std::string& code) {
     return ptx;
 }
 
+
+namespace {
+
+Graph RTCGen(Graph ret) {
+  const KernelMap* kernel_map = &(ret.GetAttr<KernelMap>("kernel"));
+  RTCMap rtc_map;
+  for (auto kv = kernel_map->cbegin(); kv != kernel_map->cend(); ++kv) {
+    rtc_map.insert(std::pair<uint32_t, RTC>(kv->first, RTC(kv->second.first, kv->second.second)));
+  }
+
+  ret.attrs["rtc"] = std::make_shared<any>(std::move(rtc_map));
+  return ret;
+}
+
+
+// register pass
+NNVM_REGISTER_PASS(RTCGen)
+.describe("TODO")
+.set_body(RTCGen)
+.set_change_graph(true);
+
+}  // namespace
 }  // namespace rtc
 }  // namespace nnvm

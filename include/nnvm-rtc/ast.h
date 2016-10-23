@@ -25,7 +25,7 @@ class NumberAST : public AST {
   NumberAST(double val)
     : val_(val) {}
   inline std::string CodeGen() override {
-    return std::to_string(val_);
+    return "float(" + std::to_string(val_) + ")";
   }
  private:
   double val_;
@@ -37,7 +37,6 @@ class VariableAST : public AST {
   VariableAST(std::string name)
     : name_(name) {}
   inline std::string CodeGen() override {
-    // TODO(ziheng) Check whether variable exists?
     return name_;
   }
  private:
@@ -48,7 +47,7 @@ class VariableAST : public AST {
 class BinaryAST : public AST {
  public:
   BinaryAST(char op, ASTPtr lhs, ASTPtr rhs)
-    : op_(op), lhs_(std::move(lhs)), rhs_(std::move(rhs)) {}
+    : op_(op), lhs_(lhs), rhs_(rhs) {}
   inline std::string CodeGen() override {
     return "(" + lhs_->CodeGen() + " " + op_ + " " + rhs_->CodeGen() + ")";
   }
@@ -61,11 +60,11 @@ class BinaryAST : public AST {
 class CallAST : public AST {
  public:
   CallAST(const std::string& callee, std::vector<ASTPtr> args)
-    : callee_(callee), args_(std::move(args)) {}
+    : callee_(callee), args_(args) {}
   inline std::string CodeGen() override {
     std::string ret = callee_ + "(";
     for (uint32_t i = 0; i < args_.size(); ++i) {
-      ret += std::move(args_[i]->CodeGen());
+      ret += args_[i]->CodeGen();
       ret += ", ";
     }
     ret.pop_back();
@@ -82,7 +81,7 @@ class CallAST : public AST {
 class ArraySubscriptAST : public AST {
  public:
   ArraySubscriptAST(ASTPtr lhs, ASTPtr rhs)
-    : lhs_(std::move(lhs)), rhs_(std::move(rhs)) {}
+    : lhs_(lhs), rhs_(rhs) {}
   inline std::string CodeGen() override {
     return lhs_->CodeGen() + "[" + rhs_->CodeGen() + "]";
   }
@@ -91,19 +90,19 @@ class ArraySubscriptAST : public AST {
 };
 
 inline ASTPtr operator+(ASTPtr lhs, ASTPtr rhs) {
-  return ASTPtr(new BinaryAST('+', std::move(lhs), std::move(rhs)));
+  return ASTPtr(new BinaryAST('+', lhs, rhs));
 }
 
 inline ASTPtr operator-(ASTPtr lhs, ASTPtr rhs) {
-  return ASTPtr(new BinaryAST('-', std::move(lhs), std::move(rhs)));
+  return ASTPtr(new BinaryAST('-', lhs, rhs));
 }
 
 inline ASTPtr operator*(ASTPtr lhs, ASTPtr rhs) {
-  return ASTPtr(new BinaryAST('*', std::move(lhs), std::move(rhs)));
+  return ASTPtr(new BinaryAST('*', lhs, rhs));
 }
 
 inline ASTPtr operator/(ASTPtr lhs, ASTPtr rhs) {
-  return ASTPtr(new BinaryAST('/', std::move(lhs), std::move(rhs)));
+  return ASTPtr(new BinaryAST('/', lhs, rhs));
 }
 
 }  // namespace rtc

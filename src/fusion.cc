@@ -18,7 +18,6 @@ FusionNodePtr CreateNode(NodePtr n) {
   ret->attrs.name   = n->attrs.name;
   ret->attrs.dict   = n->attrs.dict;
   ret->attrs.parsed = n->attrs.parsed;
-  // ret->inputs.resize(n->num_inputs(), NodeEntry{nullptr, 0, 0});
   return ret;
 }
 
@@ -48,7 +47,7 @@ Graph Fusion(const Graph& src) {
     });
 
   for (auto rit = topo_order.rbegin(); rit != topo_order.rend(); ++rit) {
-    LOG(INFO) << "Current Node: " << (*rit)->attrs.name;
+    // LOG(INFO) << "Current Node: " << (*rit)->attrs.name;
 
     std::vector<NodeEntry>& children = (*rit)->inputs;
     std::unordered_set<Node*> merged_children;
@@ -56,7 +55,7 @@ Graph Fusion(const Graph& src) {
     FusionNodePtr cur_fnode = nullptr;
     for (auto it = children.begin(); it != children.end(); ++it) {
       if (IsFusible(*rit, it->node)) {
-        LOG(INFO) << "  Merge Node: " << it->node->attrs.name;
+        // LOG(INFO) << "  Merge Node: " << it->node->attrs.name;
         merged_children.insert(it->node.get());
         if (need_fusion == false) {
           need_fusion = true;
@@ -169,10 +168,8 @@ Graph Fusion(const Graph& src) {
   for (const NodeEntry& e: src.outputs) {
     auto it = mirror_map.find(e.node.get());
     if (it != mirror_map.end()) {
-      LOG(INFO) << "EmplaceBack Output: " << it->second->attrs.name;
       ret.outputs.emplace_back(NodeEntry{it->second, e.index, e.version+1});
     } else {
-      LOG(INFO) << "PushBack Output: " << e.node->attrs.name;
       ret.outputs.push_back(e);
     }
   }
