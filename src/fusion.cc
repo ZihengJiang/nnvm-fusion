@@ -12,13 +12,13 @@ namespace nnvm {
 namespace rtc {
 namespace {
 
-FusionNodePtr CreateFusionNode(NodePtr n) {
+FusionNodePtr CreateNode(NodePtr n) {
   FusionNodePtr ret = FusionNode::Create();
   ret->attrs.op     = n->op();
   ret->attrs.name   = n->attrs.name;
   ret->attrs.dict   = n->attrs.dict;
   ret->attrs.parsed = n->attrs.parsed;
-  ret->inputs.resize(n->num_inputs(), NodeEntry{nullptr, 0, 0});
+  // ret->inputs.resize(n->num_inputs(), NodeEntry{nullptr, 0, 0});
   return ret;
 }
 
@@ -61,13 +61,15 @@ Graph Fusion(const Graph& src) {
         if (need_fusion == false) {
           need_fusion = true;
           if (node_fnode.count(rit->get()) == 0) {
-            cur_fnode = CreateFusionNode(*rit);
+            cur_fnode = CreateNode(*rit);
+            cur_fnode->inputs.resize((*rit)->num_inputs(), NodeEntry{nullptr, 0, 0});
             node_fnode[rit->get()]  = cur_fnode;
           } else {
             cur_fnode = node_fnode.at(rit->get());
           }
         }
-        FusionNodePtr child_fnode = CreateFusionNode(it->node);
+        FusionNodePtr child_fnode = CreateNode(it->node);
+        child_fnode->inputs.resize(it->node->num_inputs(), NodeEntry{nullptr, 0, 0});
         node_fnode[it->node.get()] = child_fnode;
         cur_fnode->inputs[it - children.begin()] = NodeEntry{child_fnode, 0, it->version+1};
       }
@@ -118,7 +120,7 @@ Graph Fusion(const Graph& src) {
     // create a new node and add it to mirror_map
     if (mirror_map.count(n.get()) == 0) {
       bool need_map = false;
-      NodePtr new_node = Node::Create();
+      NodePtr new_node = CreateNode(n);
       // rebuild inputs and control_deps of new node
       for (const NodeEntry& e : n->inputs) {
         if (mirror_map.count(e.node.get()) != 0) {
@@ -140,8 +142,6 @@ Graph Fusion(const Graph& src) {
         }
       }
       if (need_map) {
-        new_node->attrs.op   = n->op();
-        new_node->attrs.name = n->attrs.name;
         mirror_map[n.get()] = std::move(new_node);
       }
     }

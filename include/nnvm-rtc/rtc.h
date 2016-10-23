@@ -56,6 +56,7 @@ typedef unsigned index_t;
  */
 class RTC {
  public:
+  static void Init();
   /*!
    * \brief Build a new kernel.
    *

@@ -113,6 +113,7 @@ Kernel KernelCodeGen(const std::string& kernel_name, const FusionGraph& fgraph) 
 
 
 Graph CodeGen(Graph ret) {
+  LOG(INFO) << "CodeGen Begin";
   std::unordered_map<uint32_t, Kernel> kernel_map;
   const std::unordered_map<const Node*, FusionGraph>* node_fgraph =
     &(ret.GetAttr<std::unordered_map<const Node*, FusionGraph>>("fusion_graph"));

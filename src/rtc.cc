@@ -13,6 +13,15 @@ const char RTC::str_type[] = "float";
 std::unordered_map<std::string, char*> RTC::kernel_registry;
 
 
+void RTC::Init() {
+  CUDA_SAFE_CALL(cuInit(0));
+  CUdevice cuDevice;
+  CUcontext context;
+  CUDA_SAFE_CALL(cuDeviceGet(&cuDevice, 0));
+  CUDA_SAFE_CALL(cuCtxCreate(&context, 0, cuDevice));
+}
+
+
 RTC::RTC(const std::string& name, const std::string& kernel) {
   name_   = name;
   kernel_ = kernel;
@@ -51,12 +60,6 @@ void RTC::Run(std::vector<void*> const& input,
               uint32_t block_dim_Y,
               uint32_t block_dim_Z) {
   CHECK(output.size());
-
-  CUdevice cuDevice;
-  CUcontext context;
-  CUDA_SAFE_CALL(cuInit(0));
-  CUDA_SAFE_CALL(cuDeviceGet(&cuDevice, 0));
-  CUDA_SAFE_CALL(cuCtxCreate(&context, 0, cuDevice));
 
   if (func_ == nullptr) {
     CUmodule module;
