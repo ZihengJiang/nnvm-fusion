@@ -5,8 +5,9 @@
  */
 #include <nnvm-rtc/base.h>
 #include <nnvm/pass.h>
-#include <nnvm/tuple.h> // TShape
-#include <nnvm/op_attr_types.h> // FInferShape
+#include <nnvm/symbolic.h>
+#include <nnvm/tuple.h>
+#include <nnvm/op_attr_types.h>
 
 namespace nnvm {
 namespace rtc {
@@ -21,7 +22,8 @@ FusionNodePtr CreateNode(NodePtr n) {
   return ret;
 }
 
-bool IsFusible(NodePtr n1, NodePtr n2) {
+bool IsFusible(NodePtr n1, NodePtr n2,
+    std::unordered_map<const Node*, uint32_t>& itimes_map) {
   static const OpMap<bool>& ewise_map = Op::GetAttr<bool>("IsElementWise");
   static const OpMap<FCodeGen>& gen_map = Op::GetAttr<FCodeGen>("FCodeGen");
   if (n1->op() != nullptr         &&
@@ -30,21 +32,36 @@ bool IsFusible(NodePtr n1, NodePtr n2) {
       ewise_map.count(n2->op())   &&
       gen_map.count(n1->op())     &&
       gen_map.count(n2->op())     &&
-      n2->num_outputs() == 1) {
+      n2->num_outputs() == 1      &&
+      itimes_map.at(n2.get()) == 1) {
     return true;
   }
   return false;
 }
 
-Graph Fusion(const Graph& src) {
+Graph Fusion(Graph&& src) {
+  std::unordered_map<const Node*, FusionGraph>    node_fgraph;
+
   std::unordered_map<const Node*, NodePtr>        mirror_map;
   std::unordered_map<const Node*, FusionNodePtr>  node_fnode;
-  std::unordered_map<const Node*, FusionGraph>    node_fgraph;
-  // build topo order
+  std::unordered_map<const Node*, uint32_t>       itimes_map;
+
+  const std::vector<TShape>* shape_map =
+    &(src.GetAttr<std::vector<TShape>>("shape"));
+  const IndexedGraph &idx = src.indexed_graph();
+
+  // build topo order and itimes_map
   std::vector<NodePtr> topo_order;
   DFSVisit(src.outputs, [&](const NodePtr& node) {
-      topo_order.push_back(node);
-    });
+    topo_order.push_back(node);
+    for (const auto& input: node->inputs) {
+      if (itimes_map.count(input.node.get())) {
+          itimes_map.at(input.node.get())++;
+        } else {
+          itimes_map[input.node.get()] = 1;
+        }
+      }
+  });
 
   for (auto rit = topo_order.rbegin(); rit != topo_order.rend(); ++rit) {
     // LOG(INFO) << "Current Node: " << (*rit)->attrs.name;
@@ -54,21 +71,37 @@ Graph Fusion(const Graph& src) {
     bool need_fusion = false;
     FusionNodePtr cur_fnode = nullptr;
     for (auto it = children.begin(); it != children.end(); ++it) {
-      if (IsFusible(*rit, it->node)) {
+      if (IsFusible(*rit, it->node, itimes_map)) {
         // LOG(INFO) << "  Merge Node: " << it->node->attrs.name;
         merged_children.insert(it->node.get());
         if (need_fusion == false) {
           need_fusion = true;
           if (node_fnode.count(rit->get()) == 0) {
             cur_fnode = CreateNode(*rit);
-            cur_fnode->inputs.resize((*rit)->num_inputs(), NodeEntry{nullptr, 0, 0});
+            for (auto &item : (*rit)->inputs) {
+              NodePtr var = Node::Create();
+              var->attrs.op = nullptr;
+              var->attrs.name = "var";
+              TShape s = (*shape_map)[idx.node_id(item.node.get())];
+              var->attrs.parsed = s;
+              cur_fnode->inputs.push_back(NodeEntry{var, 0, 0});
+            }
+            // cur_fnode->inputs.resize((*rit)->num_inputs(), NodeEntry{nullptr, 0, 0});
             node_fnode[rit->get()]  = cur_fnode;
           } else {
             cur_fnode = node_fnode.at(rit->get());
           }
         }
         FusionNodePtr child_fnode = CreateNode(it->node);
-        child_fnode->inputs.resize(it->node->num_inputs(), NodeEntry{nullptr, 0, 0});
+        for (auto &item : it->node->inputs) {
+          NodePtr var = Node::Create();
+          var->attrs.op = nullptr;
+          var->attrs.name = "var";
+          TShape s = (*shape_map)[idx.node_id(item.node.get())];
+          var->attrs.parsed = s;
+          child_fnode->inputs.push_back(NodeEntry{var, 0, 0});
+        }
+        // child_fnode->inputs.resize(it->node->num_inputs(), NodeEntry{nullptr, 0, 0});
         node_fnode[it->node.get()] = child_fnode;
         cur_fnode->inputs[it - children.begin()] = NodeEntry{child_fnode, 0, it->version+1};
       }
@@ -196,7 +229,10 @@ inline bool FusionShape(const NodeAttrs& attrs,
   if (def_v.ndim() == 0) {
     for (TShape& pshape : *ishape) {
       if (pshape.ndim() != 0) {
-        def_v = pshape; break;
+        def_v = pshape;
+        if (pshape.ndim() != 1 || pshape[0] != 1) {
+          break;
+        }
       }
     }
   }
@@ -206,6 +242,9 @@ inline bool FusionShape(const NodeAttrs& attrs,
     SHAPE_ASSIGN(pshape, def_v);
   }
   for (TShape& pshape : *ishape) {
+    if (pshape.ndim() == 1 && pshape[0] == 1) {
+      continue;
+    }
     SHAPE_ASSIGN(pshape, def_v);
   }
   return true;
@@ -215,7 +254,9 @@ inline bool FusionShape(const NodeAttrs& attrs,
 NNVM_REGISTER_PASS(Fusion)
 .describe("fusion pass")
 .set_body(Fusion)
-.set_change_graph(true);
+.set_change_graph(true)
+.depend_graph_attr("shape")
+.provide_graph_attr("fusion_graph");
 
 NNVM_REGISTER_OP(fusion_op)
 .describe("fusion op")

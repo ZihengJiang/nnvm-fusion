@@ -19,16 +19,30 @@ class AST {
   virtual std::string CodeGen() = 0;
 };
 
-/*! \brief AST class for numeric literals like "1.0" */
-class NumberAST : public AST {
+
+// TODO maybe make it a template class
+/*! \brief AST class for integer literals like "1" */
+class IntAST : public AST {
  public:
-  NumberAST(double val)
+  IntAST(int val)
+    : val_(val) {}
+  inline std::string CodeGen() override {
+    return std::to_string(val_);
+  }
+ private:
+  int val_;
+};
+
+/*! \brief AST class for float literals like "1.0" */
+class FloatAST : public AST {
+ public:
+  FloatAST(float val)
     : val_(val) {}
   inline std::string CodeGen() override {
     return "float(" + std::to_string(val_) + ")";
   }
  private:
-  double val_;
+  float val_;
 };
 
 /*! \brief AST class for referencing a variable, like "a" */

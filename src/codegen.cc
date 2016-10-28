@@ -6,6 +6,7 @@
 #include <nnvm-rtc/base.h>
 #include <nnvm-rtc/ast.h>
 #include <nnvm/pass.h>
+#include <nnvm/tuple.h>
 #include <iostream>
 #include <fstream>
 
@@ -19,7 +20,7 @@ using ASTPtrIter = std::vector<ASTPtr>::const_iterator;
 uint32_t GetVariableNum(const FusionNodePtr fnode) {
   uint32_t num = 0;
   for (auto it = fnode->inputs.begin(); it != fnode->inputs.end(); ++it) {
-    if (it->node == nullptr) {
+    if (it->node->is_variable()) {
       ++num;
     } else {
       num += GetVariableNum(it->node);
@@ -38,7 +39,7 @@ ASTPtr GenASTPtr(const FusionNodePtr fnode, ASTPtrIter begin, ASTPtrIter end) {
     if (it >= end) {
       LOG(FATAL) << "CodeGen inputs string short";
     }
-    if (jt->node == nullptr) {
+    if (jt->node->is_variable()) {
       cur_inputs.push_back(*it);
       ++it;
     } else {
@@ -72,26 +73,39 @@ void PrintFNode(const FusionNodePtr fnode, int indent=0) {
   }
 }
 
+bool NeedBroadCast(const Node* var) {
+  TShape s = nnvm::get<TShape>(var->attrs.parsed);
+  if (s.ndim() == 1 && s[0] == 1) {
+    return true;
+  }
+  return false;
+}
 
-Kernel KernelCodeGen(const std::string& kernel_name, const FusionGraph& fgraph) {
+Kernel KernelCodeGen(const std::string& kernel_name, FusionGraph fgraph) {
   const std::string type_str = "float";
   // for now, we assume fusion graph only have one output.
   FusionNodePtr fnode = fgraph.outputs[0].node;
   // PrintFNode(fnode);
-  uint32_t num = GetVariableNum(fnode);
+  const IndexedGraph &idx = fgraph.indexed_graph();
+  const std::vector<uint32_t> &input_nodes = idx.input_nodes();
 
   std::string arg_str = "(";
-  for (uint32_t i = 0; i < num; ++i) {
+  for (uint32_t i = 0; i < input_nodes.size(); ++i) {
     arg_str += type_str + " *x" + std::to_string(i) + ", ";
   }
   arg_str += type_str + " *y, ";
   arg_str += "const unsigned int num_elements)";
 
   std::vector<ASTPtr> inputs;
-  for (uint32_t i = 0; i < num; ++i) {
+  for (uint32_t i = 0; i < input_nodes.size(); ++i) {
     ASTPtr x = ASTPtr(new VariableAST("x" + std::to_string(i)));
-    ASTPtr global_idx = ASTPtr(new VariableAST("global_idx"));
-    ASTPtr ast = ASTPtr(new ArraySubscriptAST(x, global_idx));
+    ASTPtr index = nullptr;
+    if (NeedBroadCast(idx[input_nodes[i]].source)) {
+      index = ASTPtr(new IntAST(0));
+    } else {
+      index = ASTPtr(new VariableAST("global_idx"));
+    }
+    ASTPtr ast = ASTPtr(new ArraySubscriptAST(x, index));
     inputs.push_back(ast);
   }
   std::string exp_str = GenASTPtr(fnode, inputs.begin(), inputs.end())->CodeGen();
@@ -114,6 +128,7 @@ Kernel KernelCodeGen(const std::string& kernel_name, const FusionGraph& fgraph) 
 
 
 Graph CodeGen(Graph ret) {
+  LOG(INFO) << "CodeGen Enter";
   std::unordered_map<uint32_t, Kernel> kernel_map;
   const std::unordered_map<const Node*, FusionGraph>* node_fgraph =
     &(ret.GetAttr<std::unordered_map<const Node*, FusionGraph>>("fusion_graph"));
@@ -126,6 +141,7 @@ Graph CodeGen(Graph ret) {
     }
   }
   ret.attrs["kernel"] = std::make_shared<any>(std::move(kernel_map));
+  LOG(INFO) << "CodeGen Exit";
   return ret;
 }
 
