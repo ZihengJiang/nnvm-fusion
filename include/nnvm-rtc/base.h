@@ -21,9 +21,6 @@ namespace rtc {
 class AST;
 class RTC;
 
-using FusionNode    = Node;
-using FusionNodePtr = NodePtr;
-using FusionGraph   = Graph;
 using Kernel        = std::pair<std::string, std::string>;
 using KernelMap     = std::unordered_map<uint32_t, Kernel>;
 using RTCMap        = std::unordered_map<uint32_t, RTC>;
