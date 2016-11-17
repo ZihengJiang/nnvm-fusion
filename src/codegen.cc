@@ -100,7 +100,11 @@ Kernel KernelCodeGen(const std::string& kernel_name, InternalGraph internal_grap
   arg_str += type_str + " *y, ";
   arg_str += "const unsigned int num_elements)";
 
+  std::vector<ASTPtr> decl_exprs;
+  std::vector<ASTPtr> assign_exprs;
   std::vector<ASTPtr> inputs;
+
+  ASTPtr output_var     = ASTPtr(new VariableAST("y"));
   for (uint32_t i = 0; i < variable_nodes.size(); ++i) {
     ASTPtr x = ASTPtr(new VariableAST("x" + std::to_string(i)));
     ASTPtr index = nullptr;
@@ -109,15 +113,27 @@ Kernel KernelCodeGen(const std::string& kernel_name, InternalGraph internal_grap
     } else {
       index = ASTPtr(new VariableAST("global_idx"));
     }
-    ASTPtr ast = ASTPtr(new ArraySubscriptAST(x, index));
-    inputs.push_back(ast);
+    ASTPtr elem_val     = ASTPtr(new ArraySubscriptAST(x, index));
+    ASTPtr elem_var     = ASTPtr(new VariableAST("x" + std::to_string(i) + "e"));
+    ASTPtr elem_decl    = ASTPtr(new DeclFloatAST(elem_var));
+    ASTPtr elem_assign  = ASTPtr(new AssignAST(elem_var, elem_val));
+
+    decl_exprs.push_back(elem_decl);
+    assign_exprs.push_back(elem_assign);
+    inputs.push_back(elem_var);
   }
   std::string exp_str = GenASTPtr(internal, inputs.begin(), inputs.end())->CodeGen();
 
+
   std::string kernel_str =
     "extern \"C\" __global__ void " + kernel_name + arg_str + " {\n" +
-    "  unsigned int global_idx = blockIdx.x * blockDim.x + threadIdx.x;\n"
-    "  if (global_idx < num_elements) {\n"
+    "  unsigned int global_idx = blockIdx.x * blockDim.x + threadIdx.x;\n";
+  for (uint32_t i = 0; i < decl_exprs.size(); ++i) {
+    kernel_str += "  " + decl_exprs[i]->CodeGen()   + "\n";
+    kernel_str += "  " + assign_exprs[i]->CodeGen() + "\n";
+  }
+  kernel_str = kernel_str +
+    "  if (global_idx < num_elements) {\n" +
     "    y[global_idx] = " + exp_str + ";\n" +
     "  }\n"
     "}";

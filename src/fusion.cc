@@ -39,6 +39,7 @@ InternalNodePtr CreateVariableNode(Graph& g, NodePtr n) {
 
 
 bool IsFusible(Graph& g, NodePtr n1, NodePtr n2) {
+  // LOG(INFO) << "IsFusible: " << n1->attrs.name << " " << n2->attrs.name;
   static const OpMap<bool>& ewise_map = Op::GetAttr<bool>("IsElementWise");
   static const OpMap<FCodeGen>& gen_map = Op::GetAttr<FCodeGen>("FCodeGen");
   const std::unordered_map<const Node*, uint32_t>* m_times =
@@ -54,6 +55,8 @@ bool IsFusible(Graph& g, NodePtr n1, NodePtr n2) {
       m_times->at(n2.get()) == 1) {
     return true;
   }
+  // LOG(INFO) << "n2->num_outputs() = " << n2->num_outputs();
+  // LOG(INFO) << "m_times->at(n2.get()) = " << m_times->at(n2.get());
   return false;
 }
 
@@ -203,6 +206,9 @@ Graph Fusion(Graph&& src) {
   std::unordered_map<const Node*, InternalNodePtr> m_internal;
   std::unordered_map<const Node*, uint32_t>        m_times;
 
+  // Symbol s;
+  // s.outputs = src.outputs;
+  // s.Print(std::cout);
 
   // build topo order and times map
   std::vector<NodePtr> topo_order;

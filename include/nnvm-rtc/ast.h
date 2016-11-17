@@ -103,6 +103,31 @@ class ArraySubscriptAST : public AST {
   ASTPtr lhs_, rhs_;
 };
 
+/*! \brief AST class for variable declaration epression */
+class DeclFloatAST : public AST {
+ public:
+  DeclFloatAST(ASTPtr var)
+    : var_(var) {}
+  inline std::string CodeGen() override {
+    return "float " + var_->CodeGen() + ";";
+  }
+ private:
+  ASTPtr var_;
+};
+
+/*! \brief AST class for variable assignment expression */
+class AssignAST : public AST {
+ public:
+  AssignAST(ASTPtr var, ASTPtr val)
+    : var_(var), val_(val) {}
+  inline std::string CodeGen() override {
+    return var_->CodeGen() + " = " + val_->CodeGen() + ";";
+  }
+ private:
+  ASTPtr var_;
+  ASTPtr val_;
+};
+
 inline ASTPtr operator+(ASTPtr lhs, ASTPtr rhs) {
   return ASTPtr(new BinaryAST('+', lhs, rhs));
 }
