@@ -3,13 +3,13 @@
  * \file rtc.cc
  * \brief wrapper for NVRTC
  */
-#include <nnvm-rtc/base.h>
-#include <nnvm-rtc/rtc.h>
+#include <nnvm-fusion/base.h>
+#include <nnvm-fusion/rtc.h>
 #include <nnvm/pass.h>
 #include <iostream>
 
 namespace nnvm {
-namespace rtc {
+namespace fusion {
 
 const char RTC::str_type[] = "float";
 std::unordered_map<std::string, char*> RTC::kernel_registry;
@@ -127,5 +127,5 @@ NNVM_REGISTER_PASS(RTCGen)
 .set_change_graph(true);
 
 }  // namespace
-}  // namespace rtc
+}  // namespace fusion
 }  // namespace nnvm

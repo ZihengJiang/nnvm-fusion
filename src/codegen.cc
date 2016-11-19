@@ -3,8 +3,8 @@
  * \file codegen.cc
  * \brief implementation of code generation
  */
-#include <nnvm-rtc/base.h>
-#include <nnvm-rtc/ast.h>
+#include <nnvm-fusion/base.h>
+#include <nnvm-fusion/ast.h>
 #include <nnvm/pass.h>
 #include <nnvm/tuple.h>
 #include <iostream>
@@ -12,7 +12,7 @@
 #include "./internal.h"
 
 namespace nnvm {
-namespace rtc {
+namespace fusion {
 namespace {
 
 using ASTPtrIter = std::vector<ASTPtr>::const_iterator;
@@ -124,7 +124,6 @@ Kernel KernelCodeGen(const std::string& kernel_name, InternalGraph internal_grap
   }
   std::string exp_str = GenASTPtr(internal, inputs.begin(), inputs.end())->CodeGen();
 
-
   std::string kernel_str =
     "extern \"C\" __global__ void " + kernel_name + arg_str + " {\n" +
     "  unsigned int global_idx = blockIdx.x * blockDim.x + threadIdx.x;\n";
@@ -137,18 +136,11 @@ Kernel KernelCodeGen(const std::string& kernel_name, InternalGraph internal_grap
     "    y[global_idx] = " + exp_str + ";\n" +
     "  }\n"
     "}";
-#if NNVM_RTC_DEBUG
-  std::ofstream file;
-  file.open(kernel_name + ".cu");
-  file << kernel_str;
-  file.close();
-#endif
   return Kernel(kernel_name, kernel_str);
 }
 
 
 Graph CodeGen(Graph ret) {
-  LOG(INFO) << "CodeGen Enter";
   std::unordered_map<uint32_t, Kernel>  m_kernel;
   const std::unordered_map<const Node*, InternalGraph>* m_internal_graph =
     &(ret.GetAttr<std::unordered_map<const Node*, InternalGraph>>("internal_graph"));
@@ -161,7 +153,6 @@ Graph CodeGen(Graph ret) {
     }
   }
   ret.attrs["kernel"] = std::make_shared<any>(std::move(m_kernel));
-  LOG(INFO) << "CodeGen Exit";
   return ret;
 }
 
@@ -173,5 +164,5 @@ NNVM_REGISTER_PASS(CodeGen)
 .set_change_graph(true);
 
 }  // namespace
-}  // namespace rtc
+}  // namespace fusion
 }  // namespace nnvm

@@ -3,8 +3,8 @@
  * \file rtc.h
  * \brief wrapper for NVRTC
  */
-#ifndef NNVM_RTC_RTC_H_
-#define NNVM_RTC_RTC_H_
+#ifndef NNVM_FUSION_RTC_H_
+#define NNVM_FUSION_RTC_H_
 #include "./base.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -47,7 +47,7 @@
   }
 
 namespace nnvm {
-namespace rtc {
+namespace fusion {
 
 typedef unsigned index_t;
 
@@ -111,7 +111,7 @@ class RTC {
   char* compile(const std::string& name, const std::string& code);
 };
 
-}  // namespace rtc
+}  // namespace fusion
 }  // namespace nnvm
 
-#endif  // NNVM_RTC_RTC_H_
+#endif  // NNVM_FUSION_RTC_H_

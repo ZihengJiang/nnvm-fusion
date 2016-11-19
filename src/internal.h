@@ -1,14 +1,15 @@
-#ifndef NNVM_RTC_INTERNAL_H_
-#define NNV_RTC_INTERNAL_H_
+#ifndef NNVM_FUSION_INTERNAL_H_
+#define NNVM_FUSION_INTERNAL_H_
 
 namespace nnvm {
-namespace rtc {
+namespace fusion {
 
+// TODO: will change to nnvm::subgraph
 using InternalNode    = Node;
 using InternalNodePtr = NodePtr;
 using InternalGraph   = Graph;
 
-}
-}
+} // namespace fusion
+} // namespace nnvm
 
-#endif
+#endif  // NNVM_FUSION_INTERNAL_H_

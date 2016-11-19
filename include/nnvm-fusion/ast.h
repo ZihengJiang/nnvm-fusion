@@ -3,13 +3,13 @@
  * \file ast.h
  * \brief defines AST class for code generation
  */
-#ifndef NNVM_RTC_AST_H_
-#define NNVM_RTC_AST_H_
+#ifndef NNVM_FUSION_AST_H_
+#define NNVM_FUSION_AST_H_
 
 #include "./base.h"
 
 namespace nnvm {
-namespace rtc {
+namespace fusion {
 // Reference: http://clang.llvm.org/doxygen/classclang_1_1Expr.html
 
 /*! \brief base class for all ast nodes */
@@ -20,7 +20,6 @@ class AST {
 };
 
 
-// TODO maybe make it a template class
 /*! \brief AST class for integer literals like "1" */
 class IntAST : public AST {
  public:
@@ -144,7 +143,7 @@ inline ASTPtr operator/(ASTPtr lhs, ASTPtr rhs) {
   return ASTPtr(new BinaryAST('/', lhs, rhs));
 }
 
-}  // namespace rtc
+}  // namespace fusion
 }  // namespace nnvm
 
-#endif  // NNVM_RTC_AST_H_
+#endif  // NNVM_FUSION_AST_H_
