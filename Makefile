@@ -7,7 +7,7 @@ export CFLAGS =  -std=c++11 -Wall -O2 -msse2  -Wno-unknown-pragmas -funroll-loop
 
 .PHONY: clean all
 
-all: lib/libnnvm-rtc.a
+all: lib/libnnvm-fusion.a
 
 SRC = $(wildcard src/*.cc src/*/*.cc)
 ALL_OBJ = $(patsubst src/%.cc, build/%.o, $(SRC))
@@ -18,7 +18,7 @@ build/%.o: src/%.cc
 	$(CXX) $(CFLAGS) -MM -MT build/$*.o $< >build/$*.d
 	$(CXX) -c $(CFLAGS) -c $< -o $@
 
-lib/libnnvm-rtc.a: $(ALL_DEP)
+lib/libnnvm-fusion.a: $(ALL_DEP)
 	@mkdir -p $(@D)
 	ar crv $@ $(filter %.o, $?)
 

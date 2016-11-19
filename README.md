@@ -15,10 +15,13 @@ Fusion will generate the CUDA codes of fused kernel, which requires us to compil
 This module is implemented based on the well defined concepts provided by NNVM. So we can implement this module as three passes on the computation graph: `{Fusion, CodeGen, RTCGen}`.
 
 - **Fusion Pass**: detects patterns can be fused in computation graph, and generates the ASTs(Abstract Syntax Tree) expressing the code structure.
-- CodeGen Pass: uses the ASTs to generate real CUDA codes.
-- RTCGen Pass: compiles the CUDA codes to functions can be called during runtime.
+- **CodeGen Pass**: uses the ASTs to generate real CUDA codes.
+- **RTCGen Pass**: compiles the CUDA codes to functions can be called during runtime.
 
 
 ## Performance
 
-we have done some benchmark tests of the training performance on LeNet and ResNet, based on [TinyFlow](https://github.com/tqchen/tinyflow). We compared the training speed between CPU, GPU and GPU with NNVM-Fusion. It demonstrates that NNVM-Fusion can improve the GPU performance by 1.4x-1.5x on LeNet and 1.1x-1.3x on ResNet with medium batch size. We also compare the training speed with the same model on TensorFlow. With NNVM-Fusion, TinyFlow's performance is on par with TensorFlow on ResNet, and pretty better on LeNet.
+we have done some benchmark tests of the training performance on LeNet and ResNet, based on [TinyFlow](https://github.com/tqchen/tinyflow). We compared the training speed between CPU, GPU and GPU with NNVM-Fusion. It demonstrates that NNVM-Fusion can improve the GPU performance by 1.4x-1.5x on LeNet and 1.1x-1.3x on ResNet with medium batch size. We also compare the training speed with the same model on TensorFlow. With NNVM-Fusion, TinyFlow's performance is on par with TensorFlow on ResNet, and better on LeNet.
+
+![perf_lenet](https://raw.githubusercontent.com/ZihengJiang/web-data/master/nnvm-fusion/perf_lenet.png)
+![perf_resnet](https://raw.githubusercontent.com/ZihengJiang/web-data/master/nnvm-fusion/perf_resnet.png)
