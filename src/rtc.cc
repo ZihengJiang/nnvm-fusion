@@ -122,7 +122,7 @@ Graph RTCGen(Graph ret) {
 
 // register pass
 NNVM_REGISTER_PASS(RTCGen)
-.describe("TODO")
+.describe("generate RTC from kernel code")
 .set_body(RTCGen)
 .set_change_graph(true);
 

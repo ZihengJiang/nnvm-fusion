@@ -295,11 +295,11 @@ inline bool FusionShape(const NodeAttrs& attrs,
 
 // register pass
 NNVM_REGISTER_PASS(Fusion)
-.describe("fusion pass")
+.describe("fuse multiple kernels into one")
 .set_body(Fusion)
 .set_change_graph(true)
 .depend_graph_attr("shape")
-.provide_graph_attr("fusion_graph");
+.provide_graph_attr("internal_graph");
 
 NNVM_REGISTER_OP(fusion_op)
 .describe("fusion op")

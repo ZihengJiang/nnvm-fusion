@@ -159,9 +159,11 @@ Graph CodeGen(Graph ret) {
 
 // register pass
 NNVM_REGISTER_PASS(CodeGen)
-.describe("TODO")
+.describe("generate CUDA code from subgraph")
 .set_body(CodeGen)
-.set_change_graph(true);
+.set_change_graph(true)
+.depend_graph_attr("internal_graph")
+.provide_graph_attr("kernel");
 
 }  // namespace
 }  // namespace fusion

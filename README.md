@@ -23,5 +23,5 @@ This module is implemented based on the well defined concepts provided by NNVM. 
 
 we have done some benchmark tests of the training performance on LeNet and ResNet, based on [TinyFlow](https://github.com/tqchen/tinyflow). We compared the training speed between CPU, GPU and GPU with NNVM-Fusion. It demonstrates that NNVM-Fusion can improve the GPU performance by 1.4x-1.5x on LeNet and 1.1x-1.3x on ResNet with medium batch size. We also compare the training speed with the same model on TensorFlow. With NNVM-Fusion, TinyFlow's performance is on par with TensorFlow on ResNet, and better on LeNet.
 
-![perf_lenet](https://raw.githubusercontent.com/ZihengJiang/web-data/master/nnvm-fusion/perf_lenet.png)
-![perf_resnet](https://raw.githubusercontent.com/ZihengJiang/web-data/master/nnvm-fusion/perf_resnet.png)
+![perf_lenet](https://raw.githubusercontent.com/dmlc/web-data/master/nnvm-fusion/perf_lenet.png)
+![perf_resnet](https://raw.githubusercontent.com/dmlc/web-data/master/nnvm-fusion/perf_resnet.png)
